@@ -80,3 +80,17 @@ def test_diff_line_positions_single_line_hunk():
     )
     mapping = diff_line_positions(diff)
     assert mapping[5] == ("b.py", 1)
+
+
+def test_diff_line_positions_skips_removed_lines():
+    diff = (
+        "diff --git a/c.py b/c.py\n"
+        "--- a/c.py\n"
+        "+++ b/c.py\n"
+        "@@\n"
+        "-old line\n"
+        "+new line\n"
+    )
+    mapping = diff_line_positions(diff)
+    assert 5 not in mapping
+    assert mapping[6] == ("c.py", 2)
