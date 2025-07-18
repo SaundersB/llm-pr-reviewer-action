@@ -48,3 +48,30 @@ def parse_review_chunk(content: str, chunk_start: int) -> List[Dict]:
         comment["line"] += chunk_start - 1
 
     return data
+
+
+def diff_line_positions(diff_text: str) -> Dict[int, Tuple[str, int]]:
+    """Map global diff line numbers to per-file patch positions.
+
+    Returns a dictionary mapping the line index in ``diff_text`` (1-based)
+    to a tuple ``(file_path, position)`` where ``position`` is the line's
+    position within that file's patch as expected by GitHub.
+    """
+    mapping: Dict[int, Tuple[str, int]] = {}
+    current_file = None
+    position = 0
+    for idx, line in enumerate(diff_text.splitlines(), 1):
+        if line.startswith("diff --git "):
+            current_file = None
+            position = 0
+            continue
+        if line.startswith("+++ b/"):
+            current_file = line[6:]
+            position = 0
+            continue
+        if line.startswith("--- "):
+            continue
+        if current_file:
+            position += 1
+            mapping[idx] = (current_file, position)
+    return mapping

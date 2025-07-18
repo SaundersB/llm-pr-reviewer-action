@@ -7,7 +7,7 @@ from openai import OpenAI, APIError
 import tiktoken
 
 sys.path.insert(0, os.path.dirname(__file__))
-from parse_utils import chunk_diff, parse_review_chunk
+from parse_utils import chunk_diff, parse_review_chunk, diff_line_positions
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
@@ -72,6 +72,7 @@ BASE_TOKENS = count_tokens(BASE_PROMPT)
 MAX_MODEL_TOKENS = 8192
 MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
+line_map = diff_line_positions(diff)
 diff_chunks = chunk_diff(diff, count_tokens, MAX_PROMPT_TOKENS, BASE_TOKENS)
 parsed = []
 
@@ -113,9 +114,13 @@ for entry in parsed:
     if entry["file"] not in valid_paths:
         print(f"⚠️ Skipping unknown file: {entry['file']}")
         continue
+    mapped = line_map.get(entry["line"])
+    if not mapped or mapped[0] != entry["file"]:
+        print(f"⚠️ Unable to map line {entry['line']} for {entry['file']}")
+        continue
     comments.append({
         "path": entry["file"],
-        "position": entry["line"],
+        "position": mapped[1],
         "body": f"[{entry['domain'].capitalize()}] {entry['comment']}"
     })
 

@@ -3,7 +3,7 @@ import os
 import sys
 import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '.github', 'scripts'))
-from parse_utils import chunk_diff, parse_review_chunk
+from parse_utils import chunk_diff, parse_review_chunk, diff_line_positions
 
 def simple_count(line: str) -> int:
     return len(line)
@@ -51,3 +51,20 @@ def test_parse_review_chunk_requires_line_int():
     content = json.dumps([{"file": "a.py", "line": "a", "domain": "bug", "comment": "x"}])
     with pytest.raises(ValueError):
         parse_review_chunk(content, 1)
+
+
+def test_diff_line_positions_maps_files_and_positions():
+    diff = (
+        "diff --git a/a.py b/a.py\n"
+        "--- a/a.py\n"
+        "+++ b/a.py\n"
+        "@@\n"
+        "+added line\n"
+        " line1\n"
+        "@@\n"
+        " line2\n"
+    )
+    mapping = diff_line_positions(diff)
+    assert mapping[4] == ("a.py", 1)
+    assert mapping[5] == ("a.py", 2)
+    assert mapping[6] == ("a.py", 3)
