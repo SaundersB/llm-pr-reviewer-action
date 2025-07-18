@@ -5,7 +5,15 @@ from utils.token_utils import count_tokens
 
 def get_review_comments(diff, config):
     client = OpenAI(api_key=config["api_key"])
-    prompt_template = config["custom_prompt"] or open("prompts/default_gpt_prompts.txt").read()
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    prompt_path = os.path.join(base_dir, '..', 'prompts', 'default_gpt_prompts.txt')
+    if config.get("custom_prompt"):
+        prompt_template = config["custom_prompt"]
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_path = os.path.join(base_dir, '..', 'prompts', 'default_gpt_prompts.txt')
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            prompt_template = f.read()
 
     base_prompt = prompt_template.replace("{{diff}}", "")
     base_tokens = count_tokens(base_prompt)
