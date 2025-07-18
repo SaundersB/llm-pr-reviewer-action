@@ -26,6 +26,6 @@ git push origin "$new_version"
 git push origin -f "v$major"
 
 # Optional: generate GitHub release (if using gh CLI)
-# gh release create "$new_version" --target main --title "$new_version" --notes "Automated release for $new_version"
+gh release create "$new_version" --target main --title "$new_version" --notes "Automated release for $new_version"
 
 echo "✅ Done. Current version: $new_version"
