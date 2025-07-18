@@ -7,7 +7,7 @@ from openai import OpenAI, APIError
 import tiktoken
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
 RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
