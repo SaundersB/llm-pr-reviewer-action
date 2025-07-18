@@ -6,6 +6,9 @@ import openai
 from openai import OpenAI, APIError
 import tiktoken
 
+sys.path.insert(0, os.path.dirname(__file__))
+from parse_utils import chunk_diff, parse_review_chunk
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
 RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
@@ -69,28 +72,7 @@ BASE_TOKENS = count_tokens(BASE_PROMPT)
 MAX_MODEL_TOKENS = 8192
 MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
-def chunk_diff(diff_text: str) -> list[tuple[str, int]]:
-    """Split a diff into token-safe chunks while tracking line numbers."""
-    lines = diff_text.splitlines(keepends=True)
-    chunks: list[tuple[str, int]] = []
-    current: list[str] = []
-    tokens = BASE_TOKENS
-    current_start = 1
-    for i, line in enumerate(lines, 1):
-        lt = count_tokens(line)
-        if tokens + lt > MAX_PROMPT_TOKENS and current:
-            chunks.append(("".join(current), current_start))
-            current = [line]
-            current_start = i
-            tokens = BASE_TOKENS + lt
-        else:
-            current.append(line)
-            tokens += lt
-    if current:
-        chunks.append(("".join(current), current_start))
-    return chunks
-
-diff_chunks = chunk_diff(diff)
+diff_chunks = chunk_diff(diff, count_tokens, MAX_PROMPT_TOKENS, BASE_TOKENS)
 parsed = []
 
 for chunk_text, chunk_start in diff_chunks:
@@ -107,10 +89,7 @@ for chunk_text, chunk_start in diff_chunks:
         sys.exit(1)
 
     try:
-        chunk_data = json.loads(content)
-        for comment in chunk_data:
-            if isinstance(comment.get("line"), int):
-                comment["line"] += chunk_start - 1
+        chunk_data = parse_review_chunk(content, chunk_start)
         parsed.extend(chunk_data)
     except json.JSONDecodeError as e:
         print("❌ Failed to parse chunk JSON:", e)
