@@ -19,7 +19,7 @@ def parse_review_chunk(content: str, chunk_start: int) -> list[ReviewComment]:
 
             comments.append(ReviewComment(
                 file=file,
-                line=chunk_start + line,
+                line=line,
                 domain=domain,
                 comment=comment
             ))
