@@ -1,4 +1,3 @@
 openai==1.79.0
-github
 requests
 tiktoken==0.3.0
