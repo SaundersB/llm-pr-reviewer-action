@@ -1,7 +1,4 @@
 import os, json
-from dotenv import load_dotenv
-
-load_dotenv()
 
 def load_config():
     event_path = os.getenv("GITHUB_EVENT_PATH")
