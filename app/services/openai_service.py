@@ -2,6 +2,7 @@ from openai import OpenAI, APIError
 from utils.parse_utils import parse_review_chunk
 from services.prompt_service import prepare_prompt_chunks
 from utils.token_utils import count_tokens
+import os
 
 def get_review_comments(diff, config):
     client = OpenAI(api_key=config["api_key"])
