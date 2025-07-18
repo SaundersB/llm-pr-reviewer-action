@@ -86,6 +86,7 @@ def diff_line_positions(diff_text: str) -> Dict[int, Tuple[str, int]]:
 
         if current_file and in_hunk:
             position += 1
-            mapping[idx] = (current_file, position)
+            if not line.startswith("-"):
+                mapping[idx] = (current_file, position)
 
     return mapping
