@@ -34,5 +34,5 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         CUSTOM_PROMPT: ${{ inputs.custom_prompt }}
-      run: python .github/scripts/review_pr.py
+      run: python app/main.py
       shell: bash
