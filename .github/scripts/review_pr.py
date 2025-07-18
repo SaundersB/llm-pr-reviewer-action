@@ -6,6 +6,9 @@ import openai
 from openai import OpenAI, APIError
 import tiktoken
 
+sys.path.insert(0, os.path.dirname(__file__))
+from parse_utils import chunk_diff, parse_review_chunk, diff_line_positions
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
 RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
@@ -69,29 +72,12 @@ BASE_TOKENS = count_tokens(BASE_PROMPT)
 MAX_MODEL_TOKENS = 8192
 MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
-def chunk_diff(diff_text: str) -> list[str]:
-    lines = diff_text.splitlines(keepends=True)
-    chunks: list[str] = []
-    current: list[str] = []
-    tokens = BASE_TOKENS
-    for line in lines:
-        lt = count_tokens(line)
-        if tokens + lt > MAX_PROMPT_TOKENS and current:
-            chunks.append("".join(current))
-            current = [line]
-            tokens = BASE_TOKENS + lt
-        else:
-            current.append(line)
-            tokens += lt
-    if current:
-        chunks.append("".join(current))
-    return chunks
-
-diff_chunks = chunk_diff(diff)
+line_map = diff_line_positions(diff)
+diff_chunks = chunk_diff(diff, count_tokens, MAX_PROMPT_TOKENS, BASE_TOKENS)
 parsed = []
 
-for chunk in diff_chunks:
-    prompt = prompt_template.replace("{{diff}}", chunk)
+for chunk_text, chunk_start in diff_chunks:
+    prompt = prompt_template.replace("{{diff}}", chunk_text)
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -104,8 +90,9 @@ for chunk in diff_chunks:
         sys.exit(1)
 
     try:
-        parsed.extend(json.loads(content))
-    except json.JSONDecodeError as e:
+        chunk_data = parse_review_chunk(content, chunk_start)
+        parsed.extend(chunk_data)
+    except (json.JSONDecodeError, ValueError) as e:
         print("❌ Failed to parse chunk JSON:", e)
         print("LLM Output:\n", content)
 
@@ -127,10 +114,13 @@ for entry in parsed:
     if entry["file"] not in valid_paths:
         print(f"⚠️ Skipping unknown file: {entry['file']}")
         continue
+    mapped = line_map.get(entry["line"])
+    if not mapped or mapped[0] != entry["file"]:
+        print(f"⚠️ Unable to map line {entry['line']} for {entry['file']}")
+        continue
     comments.append({
         "path": entry["file"],
-        "line": entry["line"],
-        "side": "RIGHT",
+        "position": mapped[1],
         "body": f"[{entry['domain'].capitalize()}] {entry['comment']}"
     })
 
