@@ -23,9 +23,14 @@ try:
 except requests.RequestException as e:
     print("❌ Failed to fetch PR data:", e)
     sys.exit(1)
-    
+
 with open(os.environ['GITHUB_EVENT_PATH']) as f:
     pr_event = json.load(f)
+
+if "pull_request" not in pr_event:
+    print("❌ This workflow must be triggered by a 'pull_request' event.")
+    sys.exit(1)
+
 
 diff_url = pr_event.get("pull_request", {}).get("diff_url")
 commit_sha = pr_event.get("pull_request", {}).get("head", {}).get("sha")
