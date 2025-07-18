@@ -2,7 +2,8 @@ import os
 import sys
 import json
 import requests
-from openai import OpenAI, OpenAIError
+import openai
+from openai import OpenAI
 import tiktoken
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -95,7 +96,7 @@ for chunk in diff_chunks:
             max_tokens=RESPONSE_TOKENS
         )
         content = response.choices[0].message.content
-    except OpenAIError as e:
+    except openai.OpenAIError as e:
         print("❌ OpenAI API error:", e)
         sys.exit(1)
 
