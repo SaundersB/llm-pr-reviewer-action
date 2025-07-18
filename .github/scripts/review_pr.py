@@ -6,8 +6,23 @@ import openai
 from openai import OpenAI, APIError
 import tiktoken
 
+# Explicit list of supported models to prevent invalid names
+SUPPORTED_MODELS = {
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "o4-mini",
+    "o3-mini",
+}
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
+if MODEL not in SUPPORTED_MODELS:
+    raise ValueError(
+        f"Unsupported model '{MODEL}'. Must be one of: {', '.join(sorted(SUPPORTED_MODELS))}"
+    )
 RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 

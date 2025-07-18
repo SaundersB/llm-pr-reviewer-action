@@ -12,6 +12,11 @@ inputs:
   custom_prompt:
     description: "Optional custom prompt for the model"
     required: false
+  openai_model:
+    description: >
+      OpenAI model to use (must be one of: gpt-4.1, gpt-4.1-mini, gpt-4.1-nano, gpt-4o, gpt-4o-mini, o4-mini, o3-mini)
+    required: false
+    default: gpt-4.1
 
 runs:
   using: "composite"
@@ -34,5 +39,6 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         CUSTOM_PROMPT: ${{ inputs.custom_prompt }}
+        OPENAI_MODEL: ${{ inputs.openai_model }}
       run: python .github/scripts/review_pr.py
       shell: bash
