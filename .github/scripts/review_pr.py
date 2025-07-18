@@ -69,29 +69,32 @@ BASE_TOKENS = count_tokens(BASE_PROMPT)
 MAX_MODEL_TOKENS = 8192
 MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
-def chunk_diff(diff_text: str) -> list[str]:
+def chunk_diff(diff_text: str) -> list[tuple[str, int]]:
+    """Split a diff into token-safe chunks while tracking line numbers."""
     lines = diff_text.splitlines(keepends=True)
-    chunks: list[str] = []
+    chunks: list[tuple[str, int]] = []
     current: list[str] = []
     tokens = BASE_TOKENS
-    for line in lines:
+    current_start = 1
+    for i, line in enumerate(lines, 1):
         lt = count_tokens(line)
         if tokens + lt > MAX_PROMPT_TOKENS and current:
-            chunks.append("".join(current))
+            chunks.append(("".join(current), current_start))
             current = [line]
+            current_start = i
             tokens = BASE_TOKENS + lt
         else:
             current.append(line)
             tokens += lt
     if current:
-        chunks.append("".join(current))
+        chunks.append(("".join(current), current_start))
     return chunks
 
 diff_chunks = chunk_diff(diff)
 parsed = []
 
-for chunk in diff_chunks:
-    prompt = prompt_template.replace("{{diff}}", chunk)
+for chunk_text, chunk_start in diff_chunks:
+    prompt = prompt_template.replace("{{diff}}", chunk_text)
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -104,7 +107,11 @@ for chunk in diff_chunks:
         sys.exit(1)
 
     try:
-        parsed.extend(json.loads(content))
+        chunk_data = json.loads(content)
+        for comment in chunk_data:
+            if isinstance(comment.get("line"), int):
+                comment["line"] += chunk_start - 1
+        parsed.extend(chunk_data)
     except json.JSONDecodeError as e:
         print("❌ Failed to parse chunk JSON:", e)
         print("LLM Output:\n", content)
