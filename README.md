@@ -31,3 +31,13 @@ You may override it with your own prompt like so:
       You are a junior frontend developer focused on accessibility...
       {{diff}}
 ```
+
+### Additional Options
+
+You can customize the model and response size or run in dry-run mode via environment variables:
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `OPENAI_MODEL` | Model name used for reviews | `gpt-4` |
+| `RESPONSE_TOKENS` | Max tokens returned from the model | `1024` |
+| `DRY_RUN` | If `true`, print the review payload instead of posting | `false` |
