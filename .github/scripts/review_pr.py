@@ -115,8 +115,7 @@ for entry in parsed:
         continue
     comments.append({
         "path": entry["file"],
-        "line": entry["line"],
-        "side": "RIGHT",
+        "position": entry["line"],
         "body": f"[{entry['domain'].capitalize()}] {entry['comment']}"
     })
 
