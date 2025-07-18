@@ -66,7 +66,7 @@ def load_config():
         "api_key": os.getenv("OPENAI_API_KEY", "test-key"),
         "model": os.getenv("OPENAI_MODEL", "gpt-4.1"),
         "response_tokens": int(os.getenv("RESPONSE_TOKENS", "1024")),
-        "dry_run": os.getenv("DRY_RUN", "true") == "true",
+        "dry_run": os.getenv("DRY_RUN", "false") == "true",
         "custom_prompt": os.getenv("CUSTOM_PROMPT"),
         "event": pr_event
     }
