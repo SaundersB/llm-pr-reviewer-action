@@ -11,7 +11,10 @@ RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
 repo = os.environ['GITHUB_REPOSITORY']
-pr_number = os.environ['GITHUB_REF'].split('/')[-1]
+with open(os.environ['GITHUB_EVENT_PATH']) as f:
+    pr_event = json.load(f)
+
+pr_number = str(pr_event["number"])
 token = os.getenv("GITHUB_TOKEN")
 headers = {"Authorization": f"Bearer {token}"}
 pr_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
