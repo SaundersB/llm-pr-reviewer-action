@@ -20,6 +20,9 @@ token = os.getenv("GITHUB_TOKEN")
 headers = {"Authorization": f"Bearer {token}"}
 pr_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
 
+print(f"Fetching PR #{pr_number} from {repo}...")
+
+
 try:
     pr_resp = requests.get(pr_url, headers=headers)
     pr_resp.raise_for_status()
