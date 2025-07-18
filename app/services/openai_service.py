@@ -21,7 +21,9 @@ def get_review_comments(diff, config):
     results = []
 
     for chunk_text, start in chunks:
+        print(f"Processing chunk starting at position {start} with length {len(chunk_text)}")
         prompt = prompt_template.replace("{{diff}}", chunk_text)
+        print(f"Generated prompt of length {len(prompt)}")
         try:
             response = client.chat.completions.create(
                 model=config["model"],

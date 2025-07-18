@@ -14,6 +14,7 @@ def process_pull_request(config):
     comments = []
 
     for entry in parsed_comments:
+        print(f"Processing comment for file: {entry.file}")
         if entry.file not in valid_files:
             continue
         position = match_line_to_position(line_map, entry.file, entry.line)

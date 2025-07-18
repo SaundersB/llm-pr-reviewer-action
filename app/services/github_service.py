@@ -24,6 +24,8 @@ def fetch_changed_files(repo, token, pr_number):
     data = resp.json()
     if not isinstance(data, list) or not all(isinstance(f, dict) and "filename" in f for f in data):
         raise ValueError(f"Unexpected response structure from GitHub API: {data}")
+
+    print(f"Fetched {len(data)} changed files for PR #{pr_number} in {repo}")
     return data
 
 
