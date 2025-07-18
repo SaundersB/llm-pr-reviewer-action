@@ -23,8 +23,13 @@ try:
 except requests.RequestException as e:
     print("❌ Failed to fetch PR data:", e)
     sys.exit(1)
+    
+with open(os.environ['GITHUB_EVENT_PATH']) as f:
+    pr_event = json.load(f)
 
-diff_url = pr_data.get("diff_url")
+diff_url = pr_event.get("pull_request", {}).get("diff_url")
+commit_sha = pr_event.get("pull_request", {}).get("head", {}).get("sha")
+
 if not diff_url:
     print("❌ Could not determine diff URL from PR data")
     sys.exit(1)
