@@ -26,7 +26,7 @@ runs:
 
     - name: Install dependencies
       run: |
-        pip install openai requests
+        pip install openai requests tiktoken
       shell: bash
 
     - name: Review PR with LLM
