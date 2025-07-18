@@ -2,10 +2,10 @@ import os
 import sys
 import json
 import requests
-import openai
+from openai import OpenAI, OpenAIError
 import tiktoken
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
 RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
@@ -27,13 +27,9 @@ except requests.RequestException as e:
     print("❌ Failed to fetch PR data:", e)
     sys.exit(1)
 
-with open(os.environ['GITHUB_EVENT_PATH']) as f:
-    pr_event = json.load(f)
-
 if "pull_request" not in pr_event:
     print("❌ This workflow must be triggered by a 'pull_request' event.")
     sys.exit(1)
-
 
 diff_url = pr_event.get("pull_request", {}).get("diff_url")
 commit_sha = pr_event.get("pull_request", {}).get("head", {}).get("sha")
@@ -60,12 +56,12 @@ else:
         prompt_template = f.read()
 
 encoding = tiktoken.get_encoding("cl100k_base")
+
 def count_tokens(text: str) -> int:
     return len(encoding.encode(text))
 
 BASE_PROMPT = prompt_template.replace("{{diff}}", "")
 BASE_TOKENS = count_tokens(BASE_PROMPT)
-
 MAX_MODEL_TOKENS = 8192
 MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
@@ -88,21 +84,21 @@ def chunk_diff(diff_text: str) -> list[str]:
     return chunks
 
 diff_chunks = chunk_diff(diff)
-
 parsed = []
+
 for chunk in diff_chunks:
     prompt = prompt_template.replace("{{diff}}", chunk)
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=RESPONSE_TOKENS,
+            max_tokens=RESPONSE_TOKENS
         )
-    except openai.error.OpenAIError as e:
+        content = response.choices[0].message.content
+    except OpenAIError as e:
         print("❌ OpenAI API error:", e)
         sys.exit(1)
 
-    content = response["choices"][0]["message"]["content"]
     try:
         parsed.extend(json.loads(content))
     except json.JSONDecodeError as e:
@@ -159,4 +155,3 @@ if post_response.status_code >= 400:
 
 print("✅ Review posted:", post_response.status_code)
 print(post_response.json())
-
