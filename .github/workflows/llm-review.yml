@@ -18,3 +18,4 @@ jobs:
         uses: SaundersB/llm-pr-reviewer-action@v1
         with:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          model: "gpt-4.1-mini-2025-04-14"
