@@ -26,7 +26,7 @@ runs:
 
     - name: Install dependencies
       run: |
-         pip install -r requirements.txt
+        pip install -r ${{ github.action_path }}/requirements.txt
       shell: bash
 
     - name: Review PR with LLM
@@ -34,5 +34,5 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         CUSTOM_PROMPT: ${{ inputs.custom_prompt }}
-      run: python app/main.py
+      run: python ${{ github.action_path }}/app/main.py
       shell: bash
