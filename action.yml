@@ -26,7 +26,8 @@ runs:
 
     - name: Install dependencies
       run: |
-        pip install openai requests
+        pip install openai requests tiktoken
+      shell: bash
 
     - name: Review PR with LLM
       env:
@@ -34,3 +35,4 @@ runs:
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         CUSTOM_PROMPT: ${{ inputs.custom_prompt }}
       run: python .github/scripts/review_pr.py
+      shell: bash
