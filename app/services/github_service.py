@@ -30,6 +30,7 @@ def fetch_changed_files(repo, token, pr_number):
 
 
 def post_review(comments, commit_sha, pr_number, config):
+    print(f"Posting {len(comments)} comments to PR #{pr_number}...")
     if config["dry_run"]:
         print("DRY_RUN: ", comments)
         return

@@ -15,11 +15,17 @@ def process_pull_request(config):
 
     for entry in parsed_comments:
         print(f"Processing comment for file: {entry.file}")
+
         if entry.file not in valid_files:
+            print(f"Skipping comment for invalid file: {entry.file}")
             continue
         position = match_line_to_position(line_map, entry.file, entry.line)
+
         if position is None:
+            print(f"Skipping comment for unmatched position in file: {entry.file}, line: {entry.line}")
             continue
+        print(f"Matched position {position} for file: {entry.file}, line: {entry.line}")
+        print(f"Adding comment: {entry.comment} for file: {entry.file}, position: {position}")
         comments.append({
             "path": entry.file,
             "position": position,
