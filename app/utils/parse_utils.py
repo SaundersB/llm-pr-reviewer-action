@@ -17,12 +17,19 @@ def parse_review_chunk(content: str, chunk_start: int) -> list[ReviewComment]:
             if not all([file, line, domain, comment]):
                 continue  # skip malformed entries
 
+            # Lines returned by the LLM are relative to the provided diff chunk.
+            # Adjust them back to the absolute diff line numbers using the
+            # chunk_start offset.
+            absolute_line = int(line) + chunk_start
+
             comments.append(ReviewComment(
                 file=file,
-                line=line,
+                line=absolute_line,
                 domain=domain,
                 comment=comment
             ))
         return comments
     except Exception as e:
-        raise ValueError(f"Failed to parse LLM output: {e}\n\nOutput:\n{content}")
+        raise ValueError(
+            f"Failed to parse LLM output: {e}\n\nOutput:\n{content}"
+        )
