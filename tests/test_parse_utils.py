@@ -65,6 +65,18 @@ def test_diff_line_positions_maps_files_and_positions():
         " line2\n"
     )
     mapping = diff_line_positions(diff)
-    assert mapping[4] == ("a.py", 1)
-    assert mapping[5] == ("a.py", 2)
-    assert mapping[6] == ("a.py", 3)
+    assert mapping[5] == ("a.py", 1)
+    assert mapping[6] == ("a.py", 2)
+    assert mapping[8] == ("a.py", 3)
+
+
+def test_diff_line_positions_single_line_hunk():
+    diff = (
+        "diff --git a/b.py b/b.py\n"
+        "--- a/b.py\n"
+        "+++ b/b.py\n"
+        "@@\n"
+        "+only line\n"
+    )
+    mapping = diff_line_positions(diff)
+    assert mapping[5] == ("b.py", 1)

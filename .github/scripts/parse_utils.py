@@ -56,22 +56,36 @@ def diff_line_positions(diff_text: str) -> Dict[int, Tuple[str, int]]:
     Returns a dictionary mapping the line index in ``diff_text`` (1-based)
     to a tuple ``(file_path, position)`` where ``position`` is the line's
     position within that file's patch as expected by GitHub.
+
+    The ``position`` value used by the GitHub API does **not** include the
+    hunk header (``@@``) lines. Positions start from ``1`` for the first
+    actual line in a hunk.
     """
+
     mapping: Dict[int, Tuple[str, int]] = {}
     current_file = None
     position = 0
+    in_hunk = False
+
     for idx, line in enumerate(diff_text.splitlines(), 1):
         if line.startswith("diff --git "):
             current_file = None
             position = 0
+            in_hunk = False
             continue
         if line.startswith("+++ b/"):
             current_file = line[6:]
             position = 0
+            in_hunk = False
             continue
         if line.startswith("--- "):
             continue
-        if current_file:
+        if line.startswith("@@"):
+            in_hunk = True
+            continue
+
+        if current_file and in_hunk:
             position += 1
             mapping[idx] = (current_file, position)
+
     return mapping
