@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import openai
+import tiktoken
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -18,30 +19,53 @@ commit_sha = pr_data["head"]["sha"]
 
 custom_prompt = os.getenv("CUSTOM_PROMPT")
 if custom_prompt:
-    prompt = custom_prompt.replace("{{diff}}", diff)
+    prompt_template = custom_prompt
 else:
-    with open("prompts/default_gpt_prompt.txt") as f:
-        base_prompt = f.read()
-    prompt = f"""{base_prompt}
+    with open("prompts/default_gpt_prompts.txt") as f:
+        prompt_template = f.read()
 
-Please return your review comments as a JSON array, one object per comment. Each object should contain:
-- "file": the exact file path
-- "line": the line number in the diff (not original file)
-- "domain": the concern category (e.g., security, performance)
-- "comment": the review comment
+encoding = tiktoken.get_encoding("cl100k_base")
+def count_tokens(text: str) -> int:
+    return len(encoding.encode(text))
 
-Here is the diff you are reviewing:
+BASE_PROMPT = prompt_template.replace("{{diff}}", "")
+BASE_TOKENS = count_tokens(BASE_PROMPT)
 
-{diff}
-"""
+MAX_MODEL_TOKENS = 8192
+RESPONSE_TOKENS = 1024
+MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
-response = openai.ChatCompletion.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": prompt}],
-    max_tokens=2048
-)
+def chunk_diff(diff_text: str) -> list[str]:
+    lines = diff_text.splitlines(keepends=True)
+    chunks: list[str] = []
+    current: list[str] = []
+    tokens = BASE_TOKENS
+    for line in lines:
+        lt = count_tokens(line)
+        if tokens + lt > MAX_PROMPT_TOKENS and current:
+            chunks.append("".join(current))
+            current = [line]
+            tokens = BASE_TOKENS + lt
+        else:
+            current.append(line)
+            tokens += lt
+    if current:
+        chunks.append("".join(current))
+    return chunks
 
-review = response['choices'][0]['message']['content']
+diff_chunks = chunk_diff(diff)
+
+responses = []
+for chunk in diff_chunks:
+    prompt = prompt_template.replace("{{diff}}", chunk)
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=RESPONSE_TOKENS,
+    )
+    responses.append(response['choices'][0]['message']['content'])
+
+review = "\n".join(responses)
 print("Review from OpenAI:\n", review)
 
 try:
@@ -83,3 +107,4 @@ post_response = requests.post(post_url, headers=headers, json=review_payload)
 
 print("✅ Review posted:", post_response.status_code)
 print(post_response.json())
+

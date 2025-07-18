@@ -7,6 +7,7 @@ This GitHub Action uses a Large Language Model (like OpenAI's GPT-4) to automati
 - PR diff analysis
 - Inline comment suggestions
 - LLM-agnostic (OpenAI by default)
+- Handles large diffs by chunking them to fit the model context
 
 ## Usage
 
@@ -14,7 +15,7 @@ This GitHub Action uses a Large Language Model (like OpenAI's GPT-4) to automati
 - uses: SaundersB/llm-pr-reviewer-action@v1
   with:
     openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-
+```
 
 ### Custom Prompt (Optional)
 
@@ -29,3 +30,4 @@ You may override it with your own prompt like so:
     custom_prompt: |
       You are a junior frontend developer focused on accessibility...
       {{diff}}
+```
