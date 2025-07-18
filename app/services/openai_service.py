@@ -7,11 +7,7 @@ import os
 
 def get_review_comments(diff, config):
     client = OpenAI(api_key=config["api_key"])
-
-    if config.get("custom_prompt"):
-        prompt_template = config["custom_prompt"]
-    else:
-        prompt_template = default_prompt
+    prompt_template = config.get("custom_prompt") or default_prompt
 
     base_prompt = prompt_template.replace("{{diff}}", "")
     base_tokens = count_tokens(base_prompt)
@@ -23,7 +19,12 @@ def get_review_comments(diff, config):
     for chunk_text, start in chunks:
         print(f"Processing chunk starting at position {start} with length {len(chunk_text)}")
         prompt = prompt_template.replace("{{diff}}", chunk_text)
-        print(f"Generated prompt of length {len(prompt)}")
+
+        # Optional debug log
+        print("\n--- Prompt sent to OpenAI ---\n")
+        print(prompt[:1000] + "\n...")  # Print first 1000 characters for brevity
+        print("\n--- End of Prompt ---\n")
+
         try:
             response = client.chat.completions.create(
                 model=config["model"],
@@ -31,8 +32,19 @@ def get_review_comments(diff, config):
                 max_tokens=config["response_tokens"]
             )
             content = response.choices[0].message.content
+
+            # Debug: show raw response
+            print("\n--- Raw LLM Response ---\n")
+            print(content)
+            print("\n--- End of LLM Response ---\n")
+
             results.extend(parse_review_chunk(content, start))
+
         except APIError as e:
-            print("❌ OpenAI error:", e)
+            print("❌ OpenAI API error:", e)
             continue
+        except Exception as e:
+            print("❌ Parsing error:", e)
+            continue
+
     return results
