@@ -2,6 +2,7 @@ from openai import OpenAI, APIError
 from utils.parse_utils import parse_review_chunk
 from services.prompt_service import prepare_prompt_chunks
 from utils.token_utils import count_tokens
+from default_prompt import default_prompt
 import os
 
 def get_review_comments(diff, config):
@@ -10,10 +11,7 @@ def get_review_comments(diff, config):
     if config.get("custom_prompt"):
         prompt_template = config["custom_prompt"]
     else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        prompt_path = os.path.join(base_dir, 'prompts', 'default_gpt_prompts.txt')
-        with open(prompt_path, 'r', encoding='utf-8') as f:
-            prompt_template = f.read()
+        prompt_template = default_prompt
 
     base_prompt = prompt_template.replace("{{diff}}", "")
     base_tokens = count_tokens(base_prompt)
