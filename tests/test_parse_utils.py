@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '.github', 'scripts'))
 from parse_utils import chunk_diff, parse_review_chunk
 
@@ -18,9 +19,35 @@ def test_chunk_diff_tracks_line_numbers():
     ]
 
 
+def test_chunk_diff_handles_empty_diff():
+    assert chunk_diff("", simple_count, 20, 0) == []
+
+
+def test_chunk_diff_respects_base_tokens():
+    diff_text = "line1\nline2\n"
+    # base_tokens=5 should force a single line per chunk when max_prompt_tokens=6
+    chunks = chunk_diff(diff_text, simple_count, 6, 5)
+    assert chunks == [
+        ("line1\n", 1),
+        ("line2\n", 2)
+    ]
+
+
 def test_parse_review_chunk_offsets_lines():
     content = json.dumps([
         {"file": "a.py", "line": 2, "domain": "bug", "comment": "fix"}
     ])
     parsed = parse_review_chunk(content, 5)
     assert parsed[0]["line"] == 6
+
+
+def test_parse_review_chunk_validates_structure():
+    content = json.dumps({"file": "a.py"})
+    with pytest.raises(ValueError):
+        parse_review_chunk(content, 1)
+
+
+def test_parse_review_chunk_requires_line_int():
+    content = json.dumps([{"file": "a.py", "line": "a", "domain": "bug", "comment": "x"}])
+    with pytest.raises(ValueError):
+        parse_review_chunk(content, 1)

@@ -91,7 +91,7 @@ for chunk_text, chunk_start in diff_chunks:
     try:
         chunk_data = parse_review_chunk(content, chunk_start)
         parsed.extend(chunk_data)
-    except json.JSONDecodeError as e:
+    except (json.JSONDecodeError, ValueError) as e:
         print("❌ Failed to parse chunk JSON:", e)
         print("LLM Output:\n", content)
 
