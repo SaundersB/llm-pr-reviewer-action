@@ -1,10 +1,14 @@
 import os
+import sys
 import json
 import requests
 import openai
 import tiktoken
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
+RESPONSE_TOKENS = int(os.getenv("RESPONSE_TOKENS", "1024"))
+DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
 repo = os.environ['GITHUB_REPOSITORY']
 pr_number = os.environ['GITHUB_REF'].split('/')[-1]
@@ -12,9 +16,27 @@ token = os.getenv("GITHUB_TOKEN")
 headers = {"Authorization": f"Bearer {token}"}
 pr_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
 
-pr_data = requests.get(pr_url, headers=headers).json()
-diff_url = pr_data['diff_url']
-diff = requests.get(diff_url, headers=headers).text
+try:
+    pr_resp = requests.get(pr_url, headers=headers)
+    pr_resp.raise_for_status()
+    pr_data = pr_resp.json()
+except requests.RequestException as e:
+    print("❌ Failed to fetch PR data:", e)
+    sys.exit(1)
+
+diff_url = pr_data.get("diff_url")
+if not diff_url:
+    print("❌ Could not determine diff URL from PR data")
+    sys.exit(1)
+
+try:
+    diff_resp = requests.get(diff_url, headers=headers)
+    diff_resp.raise_for_status()
+    diff = diff_resp.text
+except requests.RequestException as e:
+    print("❌ Failed to fetch diff:", e)
+    sys.exit(1)
+
 commit_sha = pr_data["head"]["sha"]
 
 custom_prompt = os.getenv("CUSTOM_PROMPT")
@@ -32,7 +54,6 @@ BASE_PROMPT = prompt_template.replace("{{diff}}", "")
 BASE_TOKENS = count_tokens(BASE_PROMPT)
 
 MAX_MODEL_TOKENS = 8192
-RESPONSE_TOKENS = 1024
 MAX_PROMPT_TOKENS = MAX_MODEL_TOKENS - RESPONSE_TOKENS
 
 def chunk_diff(diff_text: str) -> list[str]:
@@ -55,28 +76,37 @@ def chunk_diff(diff_text: str) -> list[str]:
 
 diff_chunks = chunk_diff(diff)
 
-responses = []
+parsed = []
 for chunk in diff_chunks:
     prompt = prompt_template.replace("{{diff}}", chunk)
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=RESPONSE_TOKENS,
-    )
-    responses.append(response['choices'][0]['message']['content'])
+    try:
+        response = openai.ChatCompletion.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=RESPONSE_TOKENS,
+        )
+    except openai.error.OpenAIError as e:
+        print("❌ OpenAI API error:", e)
+        sys.exit(1)
 
-review = "\n".join(responses)
-print("Review from OpenAI:\n", review)
+    content = response["choices"][0]["message"]["content"]
+    try:
+        parsed.extend(json.loads(content))
+    except json.JSONDecodeError as e:
+        print("❌ Failed to parse chunk JSON:", e)
+        print("LLM Output:\n", content)
 
-try:
-    parsed = json.loads(review)
-except json.JSONDecodeError as e:
-    print("❌ Failed to parse JSON from model:", e)
-    print("LLM Output:\n", review)
-    exit(1)
+print("Review from OpenAI:\n", json.dumps(parsed, indent=2))
 
 files_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
-files_changed = requests.get(files_url, headers=headers).json()
+try:
+    files_resp = requests.get(files_url, headers=headers)
+    files_resp.raise_for_status()
+    files_changed = files_resp.json()
+except requests.RequestException as e:
+    print("❌ Failed to fetch changed files:", e)
+    sys.exit(1)
+
 valid_paths = {f["filename"] for f in files_changed}
 
 comments = []
@@ -93,7 +123,7 @@ for entry in parsed:
 
 if not comments:
     print("No valid comments to post.")
-    exit(0)
+    sys.exit(0)
 
 review_payload = {
     "commit_id": commit_sha,
@@ -103,7 +133,16 @@ review_payload = {
 }
 
 post_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/reviews"
+
+if DRY_RUN:
+    print("DRY_RUN enabled. Review payload:\n", json.dumps(review_payload, indent=2))
+    sys.exit(0)
+
 post_response = requests.post(post_url, headers=headers, json=review_payload)
+if post_response.status_code >= 400:
+    print("❌ Failed to post review:", post_response.status_code)
+    print(post_response.text)
+    sys.exit(1)
 
 print("✅ Review posted:", post_response.status_code)
 print(post_response.json())
