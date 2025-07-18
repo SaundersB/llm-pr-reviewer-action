@@ -6,8 +6,7 @@ import os
 
 def get_review_comments(diff, config):
     client = OpenAI(api_key=config["api_key"])
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    prompt_path = os.path.join(base_dir, '..', 'prompts', 'default_gpt_prompts.txt')
+
     if config.get("custom_prompt"):
         prompt_template = config["custom_prompt"]
     else:
