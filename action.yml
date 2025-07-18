@@ -30,9 +30,10 @@ runs:
       shell: bash
 
     - name: Review PR with LLM
+      working-directory: ./app
       env:
         GITHUB_TOKEN: ${{ github.token }}
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         CUSTOM_PROMPT: ${{ inputs.custom_prompt }}
-      run: python app/main.py
+      run: python main.py
       shell: bash
