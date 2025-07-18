@@ -20,16 +20,19 @@ def chunk_diff(diff, count_tokens, max_tokens, base_tokens):
 
 
 def map_line_positions(diff_text):
-    mapping = {}  # (filename, new_line) -> diff position
+    # Map (filename, diff_line_number) -> diff position. The diff line number is
+    # the 1-indexed line number within the patch for that file, including removed
+    # lines so that it aligns with GitHub's `position` field.
+    mapping = {}
     patch = PatchSet(diff_text)
     for patched_file in patch:
         filename = patched_file.path
-        position = 0
+        diff_line = 0
         for hunk in patched_file:
             for line in hunk:
-                position += 1
+                diff_line += 1
                 if line.is_added or line.is_context:
-                    mapping[(filename, line.target_line_no)] = position
+                    mapping[(filename, diff_line)] = diff_line
     return mapping
 
     
