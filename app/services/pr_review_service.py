@@ -33,4 +33,8 @@ def process_pull_request(config):
         })
 
     if comments:
+        print("Posting review comments to PR...")
+        print(f"Total comments to post: {len(comments)}")
+        for comment in comments:
+            print(f"Comment on {comment['path']} at position {comment['position']}: {comment['body']}") 
         post_review(comments, commit_sha, pr_data["number"], config)

@@ -47,4 +47,5 @@ def post_review(comments, commit_sha, pr_number, config):
     resp = requests.post(url, headers=headers, json=review_payload)
 
     if resp.status_code >= 400:
+        print(review_payload)
         print("Failed to post review", resp.status_code, resp.text)
