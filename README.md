@@ -1,6 +1,6 @@
 # LLM PR Reviewer GitHub Action
 
-This GitHub Action uses a Large Language Model (like OpenAI's GPT-4) to automatically review pull requests and add code comments.
+This GitHub Action uses a Large Language Model (like OpenAI's GPT-4) to automatically review pull requests and add code comments. The code mirrors the process used in [Coderabbit's AI PR Reviewer](https://github.com/coderabbitai/ai-pr-reviewer).
 
 ## Features
 
@@ -41,6 +41,13 @@ You can customize the model and response size or run in dry-run mode via environ
 | `OPENAI_MODEL` | Model name used for reviews | `gpt-4` |
 | `RESPONSE_TOKENS` | Max tokens returned from the model | `1024` |
 | `DRY_RUN` | If `true`, print the review payload instead of posting | `false` |
+
+Before running the action locally, build the TypeScript sources:
+
+```bash
+npm install
+npm run build
+```
 
 ## Running Locally with `act`
 

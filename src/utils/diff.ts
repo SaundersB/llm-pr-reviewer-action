@@ -24,26 +24,20 @@ export function chunkDiff(
   return chunks;
 }
 
+import parse from 'parse-diff';
+
 export function mapLinePositions(diffText: string): Map<string, number> {
   const mapping = new Map<string, number>();
-  const lines = diffText.split(/\r?\n/);
-  let file = '';
-  let position = 0;
-  for (const line of lines) {
-    if (line.startsWith('+++ b/')) {
-      file = line.slice(6).trim();
-      position = 0;
-      continue;
-    }
-    if (line.startsWith('diff --git')) {
-      continue;
-    }
-    if (line.startsWith('@@')) {
-      continue;
-    }
-    position += 1;
-    if (line.startsWith('+') || line.startsWith(' ')) {
-      mapping.set(`${file}:${position}`, position);
+  const files = parse(diffText);
+  for (const file of files) {
+    let diffLine = 0;
+    for (const chunk of file.chunks) {
+      for (const change of chunk.changes) {
+        diffLine += 1;
+        if (change.type === 'add' || change.type === 'normal') {
+          mapping.set(`${file.to}:${diffLine}`, diffLine);
+        }
+      }
     }
   }
   return mapping;

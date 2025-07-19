@@ -1,4 +1,7 @@
+import { encoding_for_model } from '@dqbd/tiktoken';
+
+const enc = encoding_for_model('gpt-4');
+
 export function countTokens(text: string): number {
-  // Rough token estimation: 1 token per 4 characters
-  return Math.ceil(text.length / 4);
+  return enc.encode(text).length;
 }
