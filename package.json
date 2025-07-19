@@ -1,0 +1,10 @@
+{
+  "name": "llm-pr-reviewer-action",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

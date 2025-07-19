@@ -41,3 +41,17 @@ You can customize the model and response size or run in dry-run mode via environ
 | `OPENAI_MODEL` | Model name used for reviews | `gpt-4` |
 | `RESPONSE_TOKENS` | Max tokens returned from the model | `1024` |
 | `DRY_RUN` | If `true`, print the review payload instead of posting | `false` |
+
+## Running Locally with `act`
+
+You can execute the workflow locally using [nektos/act](https://github.com/nektos/act). A sample pull request event payload is provided in `.github/pull_request.json`.
+
+```bash
+# Install act if you don't already have it
+# https://github.com/nektos/act#installation
+
+# Run the review job locally
+act -j review -e .github/pull_request.json
+```
+
+This will execute the `llm-review.yml` workflow using the payload and print results to your console.
