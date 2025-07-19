@@ -1,0 +1,14 @@
+{
+  "name": "llm-pr-reviewer-action",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js"
+  },
+  "dependencies": {
+    "@dqbd/tiktoken": "^1.0.7",
+    "openai": "^4.30.0",
+    "parse-diff": "^0.7.0"
+  },
+  "devDependencies": {}
+}
